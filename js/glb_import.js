@@ -292,9 +292,16 @@ GLTFPrimitive.prototype.buildRenderBundle = function(device, bindGroupLayouts, b
         bundleEncoder.setVertexBuffer(2, this.texcoords[0].view.gpuBuffer, this.texcoords[0].byteOffset, 0);
     }
     if (this.indices) {
-        var indexFormat = this.indices.componentType == GLTFComponentType.UNSIGNED_SHORT ? "uint16" : "uint32";
-        bundleEncoder.setIndexBuffer(this.indices.view.gpuBuffer, indexFormat, this.indices.byteOffset, 0);
-        bundleEncoder.drawIndexed(this.indices.count, 1, 0, 0, 0);
+        try{
+            if(this.indices.view.gpuBuffer){
+                var indexFormat = this.indices.componentType == GLTFComponentType.UNSIGNED_SHORT ? "uint16" : "uint32";
+                bundleEncoder.setIndexBuffer(this.indices.view.gpuBuffer, indexFormat, this.indices.byteOffset, 0);
+                bundleEncoder.drawIndexed(this.indices.count, 1, 0, 0, 0);
+            }
+        }
+        catch(e) {
+            console.log('error');
+        }
     } else {
         bundleEncoder.draw(this.positions.count, 1, 0, 0);
     }
@@ -526,7 +533,7 @@ var GLTFSampler = function(sampler, device) {
     if (sampler["wrapS"] !== undefined) {
         if (sampler["wrapS"] == GLTFTextureFilter.REPEAT) {
             wrapS = "repeat";
-        } else if (sample["wrapS"] == GLTFTextureFilter.CLAMP_TO_EDGE) {
+        } else if (sampler["wrapS"] == GLTFTextureFilter.CLAMP_TO_EDGE) {
             wrapS = "clamp-to-edge";
         } else {
             wrapS = "mirror-repeat";
@@ -537,7 +544,7 @@ var GLTFSampler = function(sampler, device) {
     if (sampler["wrapT"] !== undefined) {
         if (sampler["wrapT"] == GLTFTextureFilter.REPEAT) {
             wrapT = "repeat";
-        } else if (sample["wrapT"] == GLTFTextureFilter.CLAMP_TO_EDGE) {
+        } else if (sampler["wrapT"] == GLTFTextureFilter.CLAMP_TO_EDGE) {
             wrapT = "clamp-to-edge";
         } else {
             wrapT = "mirror-repeat";
@@ -713,7 +720,13 @@ var uploadGLBModel = async function(buffer, device) {
     // Upload the different views used by meshes
     for (var i = 0; i < bufferViews.length; ++i) {
         if (bufferViews[i].needsUpload) {
-            bufferViews[i].upload(device);
+            try{
+                bufferViews[i].upload(device);
+            }
+            catch(e){
+                console.log(i);
+                continue;
+            }
         }
     }
 
